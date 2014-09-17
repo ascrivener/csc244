@@ -56,9 +56,11 @@
 (defun valid_poly_helper (poly)
 	(cond
 		((not poly) (format t "Polynomial cannot be empty!"))
-		((and (listp poly) (valid_mono? (car poly))) 
-			(valid_poly? poly (second (car poly))))
-		(t (format t "Polynomial must be a list of monomials!"))))
+		((not (and (listp poly) (valid_mono? (car poly)))) 
+			(format t "Polynomial must be a list and contain monomials!"))
+		((not (valid_poly? poly (second (car poly))))
+			(format t "Polynomial must have only 1 variable!"))
+		(t t)))
 
 (defun valid_poly? (poly var)
 	(cond
@@ -98,8 +100,14 @@
 	(if (valid_poly_helper poly)
 		(simplify (derive_poly poly))))
 
-(defun tree-yield (tree)
+(defun tree-yield_helper (tree)
 	(cond
 		((not tree) nil)
-		((listp tree) (cons (car tree) (tree_yield (cdr tree))))
-		(t (tree))))
+		((listp tree) (append (tree-yield_helper (car tree)) 
+								(tree-yield_helper (cdr tree))))
+		(t (cons tree nil))))
+
+(defun tree-yield (tree)
+	(if (atom tree)
+		tree
+		(tree-yield_helper tree)))
