@@ -64,16 +64,42 @@
 	(cond
 		((not poly) t)
 		(t (and (and (valid_mono? (car poly)) 
-							(eql var (second (car poly))))
-						(valid_poly? (cdr poly) var)))))
+						(eql var (second (car poly))))
+				(valid_poly? (cdr poly) var)))))
 
 (defun delete_zeroes (poly)
 	(cond
 		((not poly) nil)
-		((and (eq (third (car poly)) 0) (eq (first (car poly)) 0))
+		((= (first (car poly)) 0)
 			(delete_zeroes (cdr poly)))
 		(t (cons (car poly) (delete_zeroes (cdr poly))))))
 
+(defun regularize (poly deg accum)
+	(cond
+		((not poly) (cons accum nil))
+		((not (= deg (third (car poly)))) 
+			(cons accum (regularize (cdr poly) (third (car poly)) (car poly))))
+		((not (not accum)) (regularize (cdr poly) deg 
+					(cons (+ (first accum) (first (car poly))) 
+					(cons (second accum)
+					(cons (third accum) nil)))))
+		(t (regularize (cdr poly) deg (car poly)))))
+
 (defun simplify (poly)
-	(if (valid_poly? poly)
-		(regularize (delete_zeroes (sort poly #'> :key #'third)))))
+	(if (valid_poly_helper poly)
+		(let ((sorted_poly (sort poly #'> :key #'third)))
+		(delete_zeroes (regularize sorted_poly (third (car sorted_poly)) nil)))))
+
+(defun derive_poly (poly)
+	(if (not poly) nil
+		(cons (deriv1 (car poly)) (derive_poly (cdr poly)))))
+
+(defun deriv2 (poly)
+	(if (valid_poly_helper poly)
+		(simplify (derive_poly poly))))
+
+(defun tree-yield (tree)
+	(cond
+		((not tree) nil)
+		((listp tree) (cons (car tree) (tree_yield (cdr tree))))
+		(t (tree))))
