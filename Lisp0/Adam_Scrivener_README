@@ -1,0 +1,12 @@
+Contents:
+
+Scrivener_Lisp0.lisp:
+
+	This file contains all of the functions and auxilliary functions
+	for the Lisp0 project. 
+
+Usage:
+
+	If using slime on emacs, just load "Scrivener_Lisp0.lisp", then
+	test each of the six functions on whatever cases you want by
+	calling the functions like (f arg1 arg2 ....) and pressing enter. 
