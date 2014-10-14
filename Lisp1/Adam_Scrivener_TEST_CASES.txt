@@ -1,0 +1,115 @@
+CASES PROVIDED BY THE PROJECT DESCRIPTION:
+
+
+
+Break 5 [6]> (match-expr '(_? b c) '(b c))
+
+((_?))
+Break 5 [6]> (match-expr '(_? b c) '(a a b c))
+
+NIL
+Break 5 [6]> (match-expr '(a b c) '(a b c))
+
+T
+Break 5 [6]> (match-expr '(_? b c) '(a b c))
+
+((_? A))
+Break 5 [6]> (match-expr '(_! b c) '(b c))
+
+NIL
+Break 5 [6]> (match-expr '(_! b c) '((a b c) b c))
+
+((_! (A B C)))
+Break 6 [7]> (match-expr '_! '(a b c))
+
+((_! (A B C)))
+Break 6 [7]> (match-expr '(_*) '(a b c))
+
+((_* A B C))
+Break 6 [7]> (match-expr '(a _* _?) '(a b (c d) e))
+
+((_? E) (_* B (C D)))
+Break 6 [7]> (match-expr '(a _*) '(a b (c d) e))
+
+((_* B (C D) E))
+Break 6 [7]> (match-expr '(a (b _+ _*) _*) '(a (b (c d) e) f g))
+
+((_* F G) (_+ (C D)))
+
+
+COMPLEX CASES:
+
+Break 6 [7]> (match-expr '(_? _+ _! (_!x _?x _!y) _*) '(a b c d (e f g) h))
+
+((_* H) (_!Y G) (_?X F) (_!X E) (_! D) (_+ A B C) (_?))
+Break 6 [7]> (match-expr '(a (b _+ _*) _*) '(a (b (c d) e) f g))
+
+((_* F G) (_+ (C D)))
+Break 6 [7]> (match-expr '(_? _?x _?y _?z _*a _*b _*c a) '(a)) 
+
+((_*C) (_*B) (_*A) (_?Z) (_?Y) (_?X) (_?))
+Break 6 [7]> (match-expr '(_* _* _* _* _* _* _*) '(a b c d e f g h))
+
+((_* A B C D E F G H))
+Break 6 [7]> (match-expr '(_* (_*x (_*y (_+))) a b _?) '(() () a (b c d (e f) ((g))) a b))
+
+((_?) (_+ G) (_*Y) (_*X B C D (E F)) (_* NIL NIL A))
+
+
+
+
+WEIRD CORNER CASES:
+
+Break 6 [7]> (match-expr '() '())
+
+T
+Break 6 [7]> (match-expr 'a 'b)
+
+NIL
+Break 6 [7]> (match-expr '() '(()))
+
+NIL
+Break 6 [7]> (match-expr '(()) '(()))
+
+T
+Break 6 [7]> (match-expr '(()) '())
+
+NIL
+Break 6 [7]> (match-expr 'a '())
+
+NIL
+Break 6 [7]> (match-expr '_! '(a b c d))
+
+((_! (A B C D)))
+Break 6 [7]> (match-expr '(_!) '(a b c d))
+
+NIL
+Break 6 [7]> (match-expr '(_+) '(a b c d))
+
+((_+ A B C D))
+Break 6 [7]> (match-expr '_+ '(a b c d))
+
+((_+ (A B C D)))
+Break 6 [7]> (match-expr '(_+ _+ _+ _+) '(a b c d))
+
+((_+ D))
+Break 6 [7]> (match-expr '(_? _+ _+ _+ _+) '(a b c d))
+
+((_+ D) (_?))
+Break 6 [7]> (match-expr '(_? _+ _+ _+ _+ _+) '(a b c d))
+
+NIL
+Break 6 [7]> (match-expr '(_? _+ b _+ _d) '(a b c d))
+
+NIL
+Break 6 [7]> (match-expr '(_? _+ b _+ d) '(a b c d))
+
+((_+ C) (_?))
+Break 6 [7]> (match-expr '(_? _+ b _* d) '(a b c d))
+
+((_* C) (_+ A) (_?))
+Break 6 [7]> 
+
+
+
+

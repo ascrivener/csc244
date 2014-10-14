@@ -1,0 +1,72 @@
+(run 
+(progn (load "ascriven_src.lisp")
+
+(match-expr '(_? b c) '(b c))
+
+'SUCCESS
+
+(match-expr '(_? b c) '(a a b c))
+'SUCCESS
+(match-expr '(a b c) '(a b c))
+'SUCCESS
+(match-expr '(_? b c) '(a b c))
+'SUCCESS
+(match-expr '(_! b c) '(b c))
+'SUCCESS
+(match-expr '(_! b c) '((a b c) b c))
+'SUCCESS
+(match-expr '_! '(a b c))
+'SUCCESS
+(match-expr '(_*) '(a b c))
+'SUCCESS
+(match-expr '(a _* _?) '(a b (c d) e))
+'SUCCESS
+(match-expr '(a _*) '(a b (c d) e))
+'SUCCESS
+(match-expr '(a (b _+ _*) _*) '(a (b (c d) e) f g))
+'SUCCESS
+(match-expr '(_? _+ _! (_!x _?x _!y) _*) '(a b c d (e f g) h))
+'SUCCESS
+(match-expr '(a (b _+ _*) _*) '(a (b (c d) e) f g))
+'SUCCESS
+(match-expr '(_? _?x _?y _?z _*a _*b _*c a) '(a)) 
+'SUCCESS
+(match-expr '(_* _* _* _* _* _* _*) '(a b c d e f g h))
+'SUCCESS
+(match-expr '(_* (_*x (_*y (_+))) a b _?) '(() () a (b c d (e f) ((g))) a b))
+'SUCCESS
+
+
+
+(match-expr '() '())
+'SUCCESS
+(match-expr 'a 'b)
+'SUCCESS
+(match-expr '() '(()))
+'SUCCESS
+(match-expr '(()) '(()))
+'SUCCESS
+(match-expr '(()) '())
+'SUCCESS
+(match-expr 'a '())
+'SUCCESS
+(match-expr '_! '(a b c d))
+'SUCCESS
+(match-expr '(_!) '(a b c d))
+'SUCCESS
+(match-expr '(_+) '(a b c d))
+'SUCCESS
+(match-expr '_+ '(a b c d))
+'SUCCESS
+(match-expr '(_+ _+ _+ _+) '(a b c d))
+'SUCCESS
+(match-expr '(_? _+ _+ _+ _+) '(a b c d))
+'SUCCESS
+(match-expr '(_? _+ _+ _+ _+ _+) '(a b c d))
+'SUCCESS
+(match-expr '(_? _+ b _+ _d) '(a b c d))
+'SUCCESS
+(match-expr '(_? _+ b _+ d) '(a b c d))
+'SUCCESS
+(match-expr '(_? _+ b _* d) '(a b c d))
+'SUCCESS))
