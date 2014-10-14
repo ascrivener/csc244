@@ -1,3 +1,4 @@
+;;(load "C:/Users/Adam/Code/csc244/Lisp2/Adam_Scrivener_Lisp2/ascriven_src.lisp")
 ;;Input: an S-expression S
 ;;
 ;;output: if S is an atom whose first characters
@@ -10,24 +11,21 @@
 (defun variable? (expr)
 	(if (atom expr) 
 		(let ((str (write-to-string expr)))
-			(if (>= (length str) 2) 
-				(let ((substr (subseq str 0 2)))
-				(if (or (string-equal substr "_!")
-						(string-equal substr "_?")
-						(string-equal substr "_*")
-						(string-equal substr "_+"))
-					(let ((out (intern substr)))
-						out)))))
-		(if (and expr (atom (first expr)))
-			(let ((str (write-to-string (first expr))))
-				(if (>= (length str) 1)
-					(let ((substr (subseq str 0 1)))
-						(if (or (string-equal substr "!")
-								(string-equal substr "?")
-								(string-equal substr "*")
-								(string-equal substr "+"))
-							(let ((out (intern substr)))
-								out))))))))
+			(let ((substr1 (subseq str 0 1)))
+				(if (or (string-equal substr1 "!")
+						(string-equal substr1 "?")
+						(string-equal substr1 "*")
+						(string-equal substr1 "+"))
+					(let ((out (intern substr1)))
+						out)
+					(if (>= (length str) 2) 
+						(let ((substr2 (subseq str 0 2)))
+							(if (or (string-equal substr2 "_!")
+									(string-equal substr2 "_?")
+									(string-equal substr2 "_*")
+									(string-equal substr2 "_+"))
+								(let ((out (intern substr2)))
+									out)))))))))
 
 ;;Input: two S-expressions patt and expr
 ;;
@@ -54,7 +52,7 @@
 			(_! (progn (setf (gethash patt table) expr) t))
 			(_? (progn (setf (gethash patt table) expr) t))
 			(t (eq patt expr)))
-		(case (variable? patt)
+		(case (variable? (first patt))
 			(! (if (constrained_match patt expr)
 					(progn (setf (gethash (first patt) table) expr) t)))
 			(? (if (constrained_match patt expr)
@@ -90,14 +88,14 @@
 						(if (and expr (eq tok (first expr))) 
 							(match-list (cdr patt) (cdr expr)))
 						(not expr))))
-			(case (variable? tok)
+			(case (variable? (first tok))
 				(! (if expr (!handler patt expr (first tok))))
 				(? (?handler patt expr (first tok)))
 				(+ (if expr (+handler patt expr (first tok) nil nil)))
 				(* (*handler patt expr (first tok) nil))
 				(t (if (listp (first expr)) 
 						(and (match-list tok (first expr)) 
-						(match-list (cdr patt) (cdr expr)))))))))
+							(match-list (cdr patt) (cdr expr)))))))))
 
 (defun get_allowed (var agg)
 	(if (or (not var) (string-equal (write-to-string (first var)) "~"))
@@ -126,6 +124,25 @@
 			(if allowed
 				(and allowed_match? (not unallowed_match?))
 				(not unallowed_match?)))))
+
+(defun get-value (bindings tok)
+	(if bindings
+		(if (eq (first (first bindings)) tok)
+			(cdr (first bindings))
+			(get-value (cdr bindings) tok))))
+
+
+(defun subst-bindings (bindings expr agg)
+	(if (listp expr)
+		(if expr
+			(if (and (variable? (first expr)) (get-value bindings (first expr)))
+				(subst-bindings bindings (cdr expr) 
+					(append (reverse (get-value bindings (first expr))) agg))
+				(subst-bindings bindings (cdr expr) (cons (first expr) agg)))
+			(reverse agg))
+		(if (variable? expr)
+			(get-value bindings expr)
+			expr)))
 			
 (defun !handler (patt expr tok)
 	(if (constrained_match (first patt) (first expr))
@@ -224,13 +241,9 @@
 						(case (variable? k)
 							(_* (mklist (cons k nil) (reverse v)))
 							(_+ (mklist (cons k nil) (reverse v)))
-							(t (let ((str (write-to-string k)))
-									(if (string-equal "*" (subseq str 0 1))
-										(mklist (cons k nil) (reverse v))
-										(if (string-equal "+" (subseq str 0 1))
-											(mklist (cons k nil) (reverse v))
-											(list k v)))))))))
-
+							(* (mklist (cons k nil) (reverse v)))
+							(+ (mklist (cons k nil) (reverse v)))
+							(t (list k v))))))
 ;;Input: agg, which keeps an aggregate of the sequence so far,
 ;;and rest which keeps track of the elements we have yet to aggregate.
 ;;
