@@ -1,4 +1,23 @@
 ;;(load "C:/Users/Adam/Code/csc244/Lisp2/Adam_Scrivener_Lisp2/ascriven_src.lisp")
+
+(setq *rule1* '(/ (I _! (! my the)
+			(* (!1 present stupid new) (!2 job boss room-mate)))
+			(Why do you _! your * ?)))
+
+(setq *rule2* '(/ (I am (?1 so not) (*1 very) (!1 upset happy) about 
+					my (!2 grades weight relationship))
+				(Why are you *1 !1 about your !2 ?)))
+
+(setq *rule3* '(/ (!1 (I (!2 am was) (?3 $empty$) _!1)
+					(I (!2 will would) (?3 be) _!1)
+					(I (!2 have had) (?3 been) _!1))
+				(I !2 not ?3 _!1)))
+
+(setq *rule4* '(/ ((!1 I ~ you we he she it yo) (!2 am ~ are is soy) (!3 from ~ de) _!1)
+				(What is it like in _!1 ?)))
+
+(setq *rules* (cons *rule1* (cons *rule2* (cons *rule3* (cons *rule4* nil)))))
+
 ;;Input: an S-expression S
 ;;
 ;;output: if S is an atom whose first characters
@@ -6,6 +25,9 @@
 ;;if S is an atom and its first 2 characters are not in this
 ;;list, (or if it has fewer than 2 characters),output nil. 
 ;;If S is a list, output nil.
+
+;;Also, now recognizes variables starting with !,+,?,*.
+
 ;;allows us to tell when a token is a variable, and what
 ;;type it is., if it is.
 (defun variable? (expr)
@@ -42,8 +64,8 @@
 ;;Input: two S-expressions patt and expr
 ;;
 ;;basically an extension of above, this takes care of the case
-;;that patt is an atom (which turns out to be an important case).
-;;If patt is not an atom, sends info to match-list.
+;;that patt is just a single variable, either constrained or
+;;unconstrained, not necessarily in a list.
 (defun match-expr-helper (patt expr)
 	(if (atom patt)
 		(case (variable? patt)
@@ -97,11 +119,16 @@
 						(and (match-list tok (first expr)) 
 							(match-list (cdr patt) (cdr expr)))))))))
 
+
+;;Input: the patterns in a constrained variable,
+;;and an aggragate list.
+;;Output: gets the "allowed" patterns in the constrained variable
 (defun get_allowed (var agg)
 	(if (or (not var) (string-equal (write-to-string (first var)) "~"))
 		agg
 		(get_allowed (cdr var) (cons (car var) agg))))
 
+;;Similar to above, gets the "unallowed" patterns.
 (defun get_unallowed (var agg record?)
 	(if (not var)
 		agg
@@ -110,12 +137,16 @@
 			(get_unallowed (cdr var) agg 
 							(string-equal (write-to-string (first var)) "~")))))
 
+;;Given a list of patterns, checkes to see if any of them
+;;matches expr.
 (defun check-match (lst expr)
 	(if lst
 		(if (not (match-expr-helper (first lst) expr))
 			(check-match (cdr lst) expr)
 			t)))
 
+;;Using the above functions, checks to see if a given expr
+;;matches a constrained variable 'patt'
 (defun constrained_match (patt expr)
 	(let ((allowed (reverse (get_allowed (cdr patt) nil))) 
 		  (unallowed (reverse (get_unallowed (cdr patt) nil nil))))
@@ -125,36 +156,93 @@
 				(and allowed_match? (not unallowed_match?))
 				(not unallowed_match?)))))
 
+;;Useful for subst-bindings, this function
+;;takes a list of bindings and a token, an returns
+;;the expression or expression list that the token
+;;has been bound to.
 (defun get-value (bindings tok)
 	(if bindings
 		(if (eq (first (first bindings)) tok)
-			(cdr (first bindings))
+			(if (cdr (first bindings))
+				(cdr (first bindings))
+				"$$$EMPTY_STRING$$$") ;;tells subst-bindings that this token bound with the empty seq.
 			(get-value (cdr bindings) tok))))
 
+;;see below
+(defun subst-bindings (bindings expr)
+	(subst-bindings-helper bindings expr nil))
 
-(defun subst-bindings (bindings expr agg)
+
+;;Input: A list of bindings, an expression, and aggregate
+;;list.
+
+;;Output: The original expression, but each variable is
+;;replaced with its binding from 'bindings'.
+(defun subst-bindings-helper (bindings expr agg)
 	(if (listp expr)
 		(if expr
-			(if (and (variable? (first expr)) (get-value bindings (first expr)))
-				(subst-bindings bindings (cdr expr) 
-					(append (reverse (get-value bindings (first expr))) agg))
-				(subst-bindings bindings (cdr expr) (cons (first expr) agg)))
+			(if (listp (first expr))
+				(subst-bindings-helper bindings (cdr expr)
+					(append (list (subst-bindings-helper bindings (first expr) nil)) agg))
+				(let ((binding (get-value bindings (first expr))))
+					(if (and (variable? (first expr)) binding)
+						(if (and (stringp binding) (string-equal binding "$$$EMPTY_STRING$$$"))
+							(subst-bindings-helper bindings (cdr expr) agg)
+							(subst-bindings-helper bindings (cdr expr) 
+								(append (reverse (get-value bindings (first expr))) agg)))
+						(subst-bindings-helper bindings (cdr expr) (cons (first expr) agg)))))
 			(reverse agg))
 		(if (variable? expr)
-			(get-value bindings expr)
+			(let ((binding (get-value bindings expr)))
+				(if (and (stringp binding) 
+						(string-equal binding "$$$EMPTY_STRING$$$"))
+					(values)
+					binding))
 			expr)))
-			
+
+;;Input: a rule and an expression
+;;Output: If the rule matches the expression, output
+;;the result of the rule applied to the expr.
+;;Otherwise, nil.
+(defun try-rule (rule expr)
+	(let ((match (match-expr (second rule) expr)))
+		(if match
+			(subst-bindings match (third rule)))))
+
+;;Input: A list of rules 'rules', and an expression
+;;Output: if one of the rules matches, output the result
+;;of that rule applied to the expr. If none match,
+;;output nil.
+(defun try-rules (rules expr)
+	(if rules
+		(let ((success (try-rule (first rules) expr)))
+			(if success
+				success
+				(try-rules (cdr rules) expr)))))
+		
+;;handles the ! case, very similar to _!	
 (defun !handler (patt expr tok)
 	(if (constrained_match (first patt) (first expr))
 		(progn (setf (gethash tok table) (first expr))
 			(match-list (cdr patt) (cdr expr)))))
 
+;;handles the ? case, again similar to _?
 (defun ?handler (patt expr tok)
 	(progn (setf (gethash tok table) "$$$EMPTY_STRING$$$")
 		(if (not (match-list (cdr patt) expr))
 			(!handler patt expr tok)
 			t)))
 
+;;handles the + case. Again kind of tricky. Basically,
+;;it processes elements in expr one my one, matching
+;;them to the first element in pattern (which we are assuming
+;;is a + variable). If we match at least one element, we set
+;;'flag' to true. If we do not match some element and we have
+;;already matched at least one element, then we return
+;;whatever happens when we try to match the rest of the pattern
+;;list with the rest of the expr list.
+
+;;In the case of a match, the code looks pretty similar to _+.
 (defun +handler (patt expr tok agg flag)
 	(if (constrained_match (first patt) (first expr))
 		(progn (setf (gethash tok table) (cons (first expr) agg))
@@ -162,8 +250,10 @@
 				(if (cdr expr) 
 					(+handler patt (cdr expr) tok (cons (first expr) agg) t))
 				t))
-		flag))
+		(if flag ;if we have already matched at least one token
+			(match-list (cdr patt) expr))))
 
+;;pretty similar to _*.
 (defun *handler (patt expr tok agg)
 	(progn (setf (gethash tok table) "$$$EMPTY_STRING$$$")
 		(if (not (match-list (cdr patt) expr))
