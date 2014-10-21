@@ -1,0 +1,45 @@
+CONTENTS: 
+
+	ascriven_src.lisp: Contains source code for the project
+	ascriven_test.lisp: Contains test cases for project
+
+USAGE:
+
+	ascriven_src.lisp: If using slime, load the file, then call the functions as usual.
+
+	FUNCTIONS:
+
+		(match-expr patt expr): Fairly straightforward. Patt is a pattern with unconstrained/constrained variables, expr is an expression to be matched.
+
+		(subst-bindings bindings expr): Bindings is a list of expressions of the form (var bound), where var is a variable, and bound is an expression or sequence of expressions that var has been bound to. Expr is an expression that may contain vars from bindings, which will each be substituted for the values that correspond to the vars.
+
+		(try-rule rule expr): rule is of the form (/ patt temp), where patt is a pattern as before, temp is an expression where the bindings formed by matching patt with expr will eventually be placed, and expr is an expression to be matched with patt.
+
+		(try-rules rules expr): rules is a list of "rule"s, and try-rules calls try-rule on each rule in rules with expr until it finds one that matches. If none match, return nil.
+
+	ascriven_test.lisp: see above for loading.
+
+	FUNCTIONS:
+
+		(run): Runs all test cases.
+
+
+
+CODE DESCRIPTION:
+
+	For a more detailed explaination of the code, see the comments in ascriven_src.lisp.
+
+	The meat of the code works very similarly to assignment 1, at least for match-expr. Adding constrained variables was a little complicated, as constrained variables are lists, while unconstrained variables are symbols. This required altering the variable? function, as well as match-expr-helper, which parses the input, and it required the addition of 4 new helper methods, one for each constrained variable.
+
+	+helper was the hardest to get working, once again. Adding a flag parameter to tell when we have already "accepted" a token in the expression is a little ugly, but it works.
+
+	subst-bindings was fairly straightforward, but it was a little complex having to take into account the two types of variables, as well as nested lists. It gets pretty ugly. See the code for more detail.
+
+	finally, try-rule was very straightforward, using subst-bindings and match-expr to match patt with expr and substituting the resulting bindings into temp. Try-rules was even more straightforward.
+
+CONCLUSIONS:
+
+	Everything I tried works, I could not find a test case that did not work as I wanted it to. No special features to speak of, no remaining bugs to speak of.
+
+
+
