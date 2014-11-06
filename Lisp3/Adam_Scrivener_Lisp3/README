@@ -1,0 +1,46 @@
+CONTENTS: 
+
+	ascriven_src.lisp: Contains source code for the project
+	ascriven_test.lisp: Contains test cases for project
+
+USAGE:
+
+	ascriven_src.lisp: If using slime, load the file, then call the functions as usual.
+
+	FUNCTIONS:
+
+		(forward-inferences *rules* *facts*) - all you need for this project. Simply run this function on your rule HASH and fact HASH, then watch the program work.
+
+		Also, you can run (forward-inferences *simplerules* *simplefacts*) if you want a more dumbed down example of the correctness of the program.
+
+		You could also make your own rule and fact HASHes.
+
+		NOTE: set *verbose* to nil if you don't want any output, set *verbose* to t if you want to see all new rules and facts generated. Set it by typing (setq *verbose* t) or (setq *verbose* nil).
+
+	ascriven_test.lisp: see above for loading.
+
+	FUNCTIONS:
+
+		(run): Runs the test fact/ruleset
+
+
+
+CODE DESCRIPTION:
+
+	For a more detailed explaination of the code, see the comments in ascriven_src.lisp.
+
+	Basically, I have two hash tables, one for rules and one for facts. the forward-inferences method takes the two hash tables, then iterates over every fact in the fact table. For each fact in the fact table, we check its key, then look up what rules in the rule table have that key. Then for each of those rules, we try to match the fact using (try-rule rule fact). If we have a match, we put the match into the corresponding fact/rule table depending on what type the match is. (could be rule or fact).
+
+	If we finish iterating and there are no new facts or rules generated, we stop.
+	Otherwise, iterate again.
+
+	NOTE: I got all of the rules and facts from the 173 project "family matters". It is important to understand what it is doing. Basically, we have a bunch of facts about the members of a certain family, as well as rules which dictate their relationship with one another. The purpose of this is to show that "I" is "I"'s grandfather. In other words, I am my own grandfather. The whole point is to generate the fact (grandfather i i). Once we find that fact, (as well as a few others), we generate the fact (finished). However, given how this program works, it keeps going even after generating (finished). That is ok though.
+
+	Also, 
+
+CONCLUSIONS:
+
+	Everything I tried works, I could not find a test case that did not work as I wanted it to. No special features to speak of, no remaining bugs to speak of.
+
+
+
